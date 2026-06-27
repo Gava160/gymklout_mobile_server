@@ -6,7 +6,7 @@ import { env } from './config/env';
 import { errorHandler } from './middleware/error.middleware';
 
 // Route imports (we'll fill these in per module)
-import authRoutes from '../modules/auth/auth.routes';
+import authRoutes from './modules/auth/auth.routes';
 import profileRoutes from './modules/profiles/profiles.routes';
 import gymRoutes from './modules/gyms/gyms.routes';
 import membershipRoutes from './modules/memberships/memberships.routes';
