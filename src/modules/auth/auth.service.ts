@@ -12,18 +12,7 @@ import {
 export class AuthService {
   // ─── Register ───────────────────────────────────────────────────────────────
   async register(input: RegisterInput) {
-    const { email, password, username, fullName } = input;
-
-    // Check username is not already taken
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('username', username)
-      .maybeSingle();
-
-    if (existingProfile) {
-      throw new AppError(409, 'Username is already taken');
-    }
+    const { email, password, fullName, avatarUrl } = input;
 
     // Create auth user via Supabase Auth
     const { data, error } = await supabase.auth.admin.createUser({
@@ -32,7 +21,7 @@ export class AuthService {
       email_confirm: false, // sends confirmation email
       user_metadata: {
         full_name: fullName,
-        username,
+        avatar_url: avatarUrl ?? null,
       },
     });
 
@@ -47,18 +36,8 @@ export class AuthService {
       throw new AppError(500, 'Failed to create user');
     }
 
-    // Profile is auto-created by the DB trigger we set up
-    // but we need to set the username since trigger only sets full_name & avatar
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ username })
-      .eq('id', data.user.id);
-
-    if (profileError) {
-      // Rollback — delete the auth user if profile update fails
-      await supabase.auth.admin.deleteUser(data.user.id);
-      throw new AppError(500, 'Failed to complete registration');
-    }
+    // The DB trigger auto-creates the profile with full_name & avatar_url.
+    // No extra update needed since we no longer have a username field.
 
     return {
       message: 'Registration successful. Please check your email to verify your account.',
@@ -76,7 +55,6 @@ export class AuthService {
     });
 
     if (error) {
-      // Generic message — don't reveal whether email or password was wrong
       throw new AppError(401, 'Invalid email or password');
     }
 
@@ -86,7 +64,7 @@ export class AuthService {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, username, full_name, avatar_url, goal')
+      .select('id, full_name, avatar_url, goal, completed_profile_registration')
       .eq('id', data.user.id)
       .single();
 
@@ -121,7 +99,6 @@ export class AuthService {
 
   // ─── Logout ─────────────────────────────────────────────────────────────────
   async logout(accessToken: string) {
-    // Invalidate the session on Supabase side
     const { error } = await supabase.auth.admin.signOut(accessToken);
 
     if (error) {
@@ -134,14 +111,13 @@ export class AuthService {
   // ─── Forgot Password ─────────────────────────────────────────────────────────
   async forgotPassword(input: ForgotPasswordInput) {
     const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
-      redirectTo: 'gymklout://reset-password', // deep link for Flutter
+      redirectTo: 'gymklout://reset-password',
     });
 
     if (error) {
       throw new AppError(500, 'Failed to send reset email');
     }
 
-    // Always return success — never reveal if email exists or not
     return {
       message: 'If an account with that email exists, a reset link has been sent.',
     };
@@ -162,7 +138,6 @@ export class AuthService {
 
   // ─── Change Password ─────────────────────────────────────────────────────────
   async changePassword(userId: string, input: ChangePasswordInput) {
-    // Verify current password by attempting a sign-in
     const { data: userData } = await supabase.auth.admin.getUserById(userId);
 
     if (!userData.user?.email) {
