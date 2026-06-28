@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const completeProfileSchema = z.object({
+  fullName: z.string().min(2).max(50).trim().optional(),
   phone: z
     .string()
     .regex(/^\+?[1-9]\d{7,14}$/, 'Invalid phone number')
@@ -39,6 +40,12 @@ export const completeProfileSchema = z.object({
     .enum(['lose_weight', 'build_muscle', 'maintain', 'endurance'])
     .optional(),
   bio: z.string().max(300, 'Bio must be under 300 characters').optional(),
+
+  activityLevel: z.enum(['sedentary', 'lightly_active', 'moderately_active', 'very_active']).optional(),
+  fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  targetWeightKg: z.number().min(20).max(500).optional(),
+  workoutFrequency: z.number().min(1).max(7).optional(),
+  completedProfileRegistration: z.boolean().optional(),
 });
 
 export const updateProfileSchema = z.object({
@@ -68,6 +75,10 @@ export const updateProfileSchema = z.object({
     .enum(['lose_weight', 'build_muscle', 'maintain', 'endurance'])
     .optional(),
   bio: z.string().max(300).optional(),
+  activityLevel: z.enum(['sedentary', 'lightly_active', 'moderately_active', 'very_active']).optional(),
+  fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  targetWeightKg: z.number().min(20).max(500).optional(),
+  workoutFrequency: z.number().min(1).max(7).optional(),
 });
 
 export const updatePinSchema = z

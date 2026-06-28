@@ -13,10 +13,9 @@ export class ProfilesService {
   async completeProfile(userId: string, input: CompleteProfileInput) {
     const { pin, ...rest } = input;
 
-    // Check profile exists and isn't already completed
     const { data: existing } = await supabase
       .from('profiles')
-      .select('id, completed_profile_registration')
+      .select('id')
       .eq('id', userId)
       .single();
 
@@ -24,30 +23,42 @@ export class ProfilesService {
       throw new AppError(404, 'Profile not found');
     }
 
-    if (existing.completed_profile_registration) {
-      throw new AppError(400, 'Profile is already completed');
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    // Only hash and save PIN if provided
+    if (pin) {
+      updateData['pin'] = await bcrypt.hash(pin, 12);
     }
 
-    // Hash the PIN before saving — never store plain PINs
-    const hashedPin = await bcrypt.hash(pin, 12);
+    if (rest.fullName !== undefined)                      updateData['full_name']                      = rest.fullName;
+    if (rest.phone !== undefined)                         updateData['phone']                          = rest.phone;
+    if (rest.gender !== undefined)                        updateData['gender']                         = rest.gender;
+    if (rest.dateOfBirth !== undefined)                   updateData['date_of_birth']                  = rest.dateOfBirth;
+    if (rest.address !== undefined)                       updateData['address']                        = rest.address;
+    if (rest.city !== undefined)                          updateData['city']                           = rest.city;
+    if (rest.state !== undefined)                         updateData['state']                          = rest.state;
+    if (rest.country !== undefined)                       updateData['country']                        = rest.country;
+    if (rest.weightKg !== undefined)                      updateData['weight_kg']                      = rest.weightKg;
+    if (rest.heightCm !== undefined)                      updateData['height_cm']                      = rest.heightCm;
+    if (rest.goal !== undefined)                          updateData['goal']                           = rest.goal;
+    if (rest.bio !== undefined)                           updateData['bio']                            = rest.bio;
+    if (rest.activityLevel !== undefined)                 updateData['activity_level']                 = rest.activityLevel;
+    if (rest.fitnessLevel !== undefined)                  updateData['fitness_level']                  = rest.fitnessLevel;
+    if (rest.targetWeightKg !== undefined)                updateData['target_weight_kg']               = rest.targetWeightKg;
+    if (rest.workoutFrequency !== undefined)              updateData['workout_frequency']              = rest.workoutFrequency;
+    if (rest.completedProfileRegistration !== undefined)  updateData['completed_profile_registration'] = rest.completedProfileRegistration;
 
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        ...rest,
-        pin: hashedPin,
-        date_of_birth: rest.dateOfBirth,
-        weight_kg: rest.weightKg,
-        height_cm: rest.heightCm,
-        completed_profile_registration: true,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', userId)
       .select('*')
       .single();
 
     if (error) {
-      throw new AppError(500, 'Failed to complete profile');
+      throw new AppError(500, 'Failed to update profile');
     }
 
     // Strip pin from response — never return it
@@ -63,6 +74,7 @@ export class ProfilesService {
         id, full_name, email, avatar_url, phone, gender,
         date_of_birth, address, city, state, country,
         weight_kg, height_cm, goal, bio,
+        activity_level, fitness_level, target_weight_kg, workout_frequency,
         completed_profile_registration, created_at, updated_at
       `)
       .eq('id', userId)
@@ -77,22 +89,25 @@ export class ProfilesService {
 
   // ─── Update Profile ──────────────────────────────────────────────────────────
   async updateProfile(userId: string, input: UpdateProfileInput) {
-    // Build update object — only include fields that were provided
     const updateData: Record<string, unknown> = {};
 
-    if (input.fullName)    updateData['full_name']    = input.fullName;
-    if (input.avatarUrl)   updateData['avatar_url']   = input.avatarUrl;
-    if (input.phone)       updateData['phone']        = input.phone;
-    if (input.gender)      updateData['gender']       = input.gender;
-    if (input.dateOfBirth) updateData['date_of_birth'] = input.dateOfBirth;
-    if (input.address)     updateData['address']      = input.address;
-    if (input.city)        updateData['city']         = input.city;
-    if (input.state)       updateData['state']        = input.state;
-    if (input.country)     updateData['country']      = input.country;
-    if (input.weightKg)    updateData['weight_kg']    = input.weightKg;
-    if (input.heightCm)    updateData['height_cm']    = input.heightCm;
-    if (input.goal)        updateData['goal']         = input.goal;
-    if (input.bio)         updateData['bio']          = input.bio;
+    if (input.fullName !== undefined)        updateData['full_name']        = input.fullName;
+    if (input.avatarUrl !== undefined)       updateData['avatar_url']       = input.avatarUrl;
+    if (input.phone !== undefined)           updateData['phone']            = input.phone;
+    if (input.gender !== undefined)          updateData['gender']           = input.gender;
+    if (input.dateOfBirth !== undefined)     updateData['date_of_birth']    = input.dateOfBirth;
+    if (input.address !== undefined)         updateData['address']          = input.address;
+    if (input.city !== undefined)            updateData['city']             = input.city;
+    if (input.state !== undefined)           updateData['state']            = input.state;
+    if (input.country !== undefined)         updateData['country']          = input.country;
+    if (input.weightKg !== undefined)        updateData['weight_kg']        = input.weightKg;
+    if (input.heightCm !== undefined)        updateData['height_cm']        = input.heightCm;
+    if (input.goal !== undefined)            updateData['goal']             = input.goal;
+    if (input.bio !== undefined)             updateData['bio']              = input.bio;
+    if (input.activityLevel !== undefined)   updateData['activity_level']   = input.activityLevel;
+    if (input.fitnessLevel !== undefined)    updateData['fitness_level']    = input.fitnessLevel;
+    if (input.targetWeightKg !== undefined)  updateData['target_weight_kg'] = input.targetWeightKg;
+    if (input.workoutFrequency !== undefined) updateData['workout_frequency'] = input.workoutFrequency;
 
     if (Object.keys(updateData).length === 0) {
       throw new AppError(400, 'No fields provided to update');
@@ -106,6 +121,7 @@ export class ProfilesService {
         id, full_name, email, avatar_url, phone, gender,
         date_of_birth, address, city, state, country,
         weight_kg, height_cm, goal, bio,
+        activity_level, fitness_level, target_weight_kg, workout_frequency,
         completed_profile_registration, created_at, updated_at
       `)
       .single();
@@ -179,7 +195,6 @@ export class ProfilesService {
 
   // ─── Delete Account ──────────────────────────────────────────────────────────
   async deleteAccount(userId: string, input: VerifyPinInput) {
-    // Must verify PIN before deleting account
     await this.verifyPin(userId, input);
 
     const { error } = await supabase.auth.admin.deleteUser(userId);
@@ -188,7 +203,6 @@ export class ProfilesService {
       throw new AppError(500, 'Failed to delete account');
     }
 
-    // Profile is cascade deleted by DB foreign key
     return { message: 'Account deleted successfully' };
   }
 }
