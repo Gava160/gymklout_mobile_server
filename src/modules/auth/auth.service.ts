@@ -55,73 +55,91 @@ async resendVerification(input: ResendVerificationInput) {
 
   // ─── Register ───────────────────────────────────────────────────────────────
   async register(input: RegisterInput) {
-    const { email, password, fullName, avatarUrl } = input;
+  const { email, password, fullName, avatarUrl } = input;
 
-    // Create auth user via Supabase Auth
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: false, // sends confirmation email
-      user_metadata: {
-        full_name: fullName,
-        avatar_url: avatarUrl ?? null,
-      },
-    });
+  // Check if user already exists
+  const { data: existingUser } = await supabase.auth.admin.listUsers();
+  const found = existingUser?.users?.find((u) => u.email === email);
 
-    if (error) {
-      if (error.message.includes('already registered')) {
-        throw new AppError(409, 'An account with this email already exists');
-      }
-      throw new AppError(400, error.message);
+  if (found) {
+    // If exists but unverified — resend OTP and return 409
+    // Flutter will catch 409 and push to verify screen
+    if (!found.email_confirmed_at) {
+      await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+      throw new AppError(409, 'Account already exists but is not verified. A new code has been sent to your email.');
     }
 
-    if (!data.user) {
-      throw new AppError(500, 'Failed to create user');
-    }
-
-    // The DB trigger auto-creates the profile with full_name & avatar_url.
-    // No extra update needed since we no longer have a username field.
-
-    return {
-      message: 'Registration successful. Please check your email to verify your account.',
-      userId: data.user.id,
-    };
+    // Fully verified account — plain duplicate
+    throw new AppError(409, 'An account with this email already exists');
   }
+
+  // Create auth user via Supabase Auth
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: false,
+    user_metadata: {
+      full_name: fullName,
+      avatar_url: avatarUrl ?? null,
+    },
+  });
+
+  if (error) {
+    throw new AppError(400, error.message);
+  }
+
+  if (!data.user) {
+    throw new AppError(500, 'Failed to create user');
+  }
+
+  return {
+    message: 'Registration successful. Please check your email to verify your account.',
+    userId: data.user.id,
+  };
+}
 
   // ─── Login ──────────────────────────────────────────────────────────────────
   async login(input: LoginInput) {
-    const { email, password } = input;
+  const { email, password } = input;
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    if (error) {
-      throw new AppError(401, 'Invalid email or password');
-    }
-
-    if (!data.user.email_confirmed_at) {
-      throw new AppError(403, 'Please verify your email before logging in');
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, goal, completed_profile_registration')
-      .eq('id', data.user.id)
-      .single();
-
-    return {
-      accessToken: data.session.access_token,
-      refreshToken: data.session.refresh_token,
-      expiresAt: data.session.expires_at,
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        profile,
-      },
-    };
+  if (error) {
+    throw new AppError(401, 'Invalid email or password');
   }
+
+  if (!data.user.email_confirmed_at) {
+    // Auto-resend OTP so they have a fresh code
+    await supabase.auth.resend({
+      type: 'signup',
+      email,
+    });
+    throw new AppError(403, 'Please verify your email before logging in');
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, full_name, avatar_url, goal, completed_profile_registration')
+    .eq('id', data.user.id)
+    .single();
+
+  return {
+    accessToken: data.session.access_token,
+    refreshToken: data.session.refresh_token,
+    expiresAt: data.session.expires_at,
+    user: {
+      id: data.user.id,
+      email: data.user.email,
+      profile,
+    },
+  };
+}
 
   // ─── Refresh Token ───────────────────────────────────────────────────────────
   async refreshToken(input: RefreshTokenInput) {
