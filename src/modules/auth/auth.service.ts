@@ -58,32 +58,26 @@ async resendVerification(input: ResendVerificationInput) {
   const { email, password, fullName, avatarUrl } = input;
 
   // Check if user already exists
-  const { data: existingUser } = await supabase.auth.admin.listUsers();
-  const found = existingUser?.users?.find((u) => u.email === email);
+  const { data: existingUsers } = await supabase.auth.admin.listUsers();
+  const found = existingUsers?.users?.find((u) => u.email === email);
 
   if (found) {
-    // If exists but unverified — resend OTP and return 409
-    // Flutter will catch 409 and push to verify screen
     if (!found.email_confirmed_at) {
-      await supabase.auth.resend({
-        type: 'signup',
-        email,
-      });
+      await supabase.auth.resend({ type: 'signup', email });
       throw new AppError(409, 'Account already exists but is not verified. A new code has been sent to your email.');
     }
-
-    // Fully verified account — plain duplicate
     throw new AppError(409, 'An account with this email already exists');
   }
 
-  // Create auth user via Supabase Auth
-  const { data, error } = await supabase.auth.admin.createUser({
+  // Use signUp instead of admin.createUser so password is properly stored
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    email_confirm: false,
-    user_metadata: {
-      full_name: fullName,
-      avatar_url: avatarUrl ?? null,
+    options: {
+      data: {
+        full_name: fullName,
+        avatar_url: avatarUrl ?? null,
+      },
     },
   });
 
