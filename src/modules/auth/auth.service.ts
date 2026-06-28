@@ -119,9 +119,10 @@ async resendVerification(input: ResendVerificationInput) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, avatar_url, goal, completed_profile_registration')
+    .select('id, email, full_name, avatar_url, goal, completed_profile_registration, created_at, updated_at')
     .eq('id', data.user.id)
     .single();
+
 
   return {
     accessToken: data.session.access_token,
