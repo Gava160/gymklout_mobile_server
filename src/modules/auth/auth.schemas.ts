@@ -68,6 +68,17 @@ export const changePasswordSchema = z
     path: ['newPassword'],
   });
 
+export const verifyOtpSchema = z.object({
+  email: z.string().email('Invalid email address').toLowerCase().trim(),
+  token: z.string().length(6, 'OTP must be 6 digits'),
+});
+
+export const resendVerificationSchema = z.object({
+  email: z.string().email('Invalid email address').toLowerCase().trim(),
+});
+
+export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;

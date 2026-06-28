@@ -10,11 +10,20 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   changePasswordSchema,
+  verifyOtpSchema,
+  resendVerificationSchema,
 } from './auth.schemas';
 
 const router = Router();
 
 // ─── Rate Limiters ────────────────────────────────────────────────────────────
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { success: false, error: 'Too many OTP attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Strict: login & register — 10 attempts per 15 min
 const authLimiter = rateLimit({
@@ -48,6 +57,8 @@ router.post('/register', authLimiter, validate(registerSchema), authController.r
 router.post('/login', authLimiter, validate(loginSchema), authController.login);
 router.post('/refresh', refreshLimiter, validate(refreshTokenSchema), authController.refreshToken);
 router.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
+router.post('/verify-otp', otpLimiter, validate(verifyOtpSchema), authController.verifyOtp);
+router.post('/resend-verification', otpLimiter, validate(resendVerificationSchema), authController.resendVerification);
 
 // ─── Protected Routes ─────────────────────────────────────────────────────────
 router.get('/me', authenticate, authController.getMe);

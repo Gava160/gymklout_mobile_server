@@ -7,9 +7,52 @@ import {
   ForgotPasswordInput,
   ResetPasswordInput,
   ChangePasswordInput,
+  VerifyOtpInput,
+  ResendVerificationInput,
 } from './auth.schemas';
 
 export class AuthService {
+
+  // ─── Verify OTP ──────────────────────────────────────────────────────────────
+async verifyOtp(input: VerifyOtpInput) {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: input.email,
+    token: input.token,
+    type: 'signup',
+  });
+
+  if (error) {
+    throw new AppError(400, 'Invalid or expired OTP code');
+  }
+
+  if (!data.session) {
+    throw new AppError(400, 'Verification failed. Please try again.');
+  }
+
+  return {
+    message: 'Email verified successfully.',
+    accessToken: data.session.access_token,
+    refreshToken: data.session.refresh_token,
+    expiresAt: data.session.expires_at,
+  };
+}
+
+// ─── Resend Verification Email ───────────────────────────────────────────────
+async resendVerification(input: ResendVerificationInput) {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: input.email,
+  });
+
+  if (error) {
+    throw new AppError(500, 'Failed to resend verification email');
+  }
+
+  return {
+    message: 'Verification email resent. Please check your inbox.',
+  };
+}
+
   // ─── Register ───────────────────────────────────────────────────────────────
   async register(input: RegisterInput) {
     const { email, password, fullName, avatarUrl } = input;

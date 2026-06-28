@@ -3,6 +3,24 @@ import { AuthRequest } from '../../types';
 import { authService } from './auth.service';
 
 export class AuthController {
+  async verifyOtp(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const result = await authService.verifyOtp(req.body);
+    res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async resendVerification(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const result = await authService.resendVerification(req.body);
+    res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
   async register(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const result = await authService.register(req.body);
