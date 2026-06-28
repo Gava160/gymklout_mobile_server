@@ -13,6 +13,7 @@ import membershipRoutes from './modules/memberships/memberships.routes';
 import workoutRoutes from './modules/workouts/workouts.routes';
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
