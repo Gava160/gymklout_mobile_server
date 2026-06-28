@@ -36,9 +36,16 @@ export const completeProfileSchema = z.object({
     .min(50, 'Height seems too low')
     .max(300, 'Height seems too high')
     .optional(),
-  goal: z
-    .enum(['lose_weight', 'build_muscle', 'maintain', 'endurance'])
-    .optional(),
+  goal: z.enum([
+  'lose_weight',
+  'build_muscle',
+  'maintain',
+  'endurance',
+  'flexibility',
+  'reduce_stress',
+  'eat_healthier',
+]).optional(),
+age: z.number().min(13).max(120).optional(),
   bio: z.string().max(300, 'Bio must be under 300 characters').optional(),
 
   activityLevel: z.enum(['sedentary', 'lightly_active', 'moderately_active', 'very_active']).optional(),
@@ -74,6 +81,7 @@ export const updateProfileSchema = z.object({
   goal: z
     .enum(['lose_weight', 'build_muscle', 'maintain', 'endurance'])
     .optional(),
+    age: z.number().min(13).max(120).optional(),
   bio: z.string().max(300).optional(),
   activityLevel: z.enum(['sedentary', 'lightly_active', 'moderately_active', 'very_active']).optional(),
   fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),

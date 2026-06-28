@@ -48,6 +48,20 @@ export class ProfilesService {
     if (rest.fitnessLevel !== undefined)                  updateData['fitness_level']                  = rest.fitnessLevel;
     if (rest.targetWeightKg !== undefined)                updateData['target_weight_kg']               = rest.targetWeightKg;
     if (rest.workoutFrequency !== undefined)              updateData['workout_frequency']              = rest.workoutFrequency;
+    if (rest.dateOfBirth !== undefined) {
+  updateData['date_of_birth'] = rest.dateOfBirth;
+  
+  // Derive age from dateOfBirth
+  const birth = new Date(rest.dateOfBirth);
+  const today = new Date();
+  let derivedAge = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    derivedAge--;
+  }
+  updateData['age'] = derivedAge;
+}
+    
     if (rest.completedProfileRegistration !== undefined)  updateData['completed_profile_registration'] = rest.completedProfileRegistration;
 
     const { data, error } = await supabase
@@ -108,6 +122,7 @@ export class ProfilesService {
     if (input.fitnessLevel !== undefined)    updateData['fitness_level']    = input.fitnessLevel;
     if (input.targetWeightKg !== undefined)  updateData['target_weight_kg'] = input.targetWeightKg;
     if (input.workoutFrequency !== undefined) updateData['workout_frequency'] = input.workoutFrequency;
+    if (input.age !== undefined) updateData['age'] = input.age;
 
     if (Object.keys(updateData).length === 0) {
       throw new AppError(400, 'No fields provided to update');
