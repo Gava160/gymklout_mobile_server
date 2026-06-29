@@ -230,7 +230,7 @@ export class ProfilesService {
   // ─── Upload Avatar ───────────────────────────────────────────────────────────
   async uploadAvatar(userId: string, fileBuffer: Buffer, mimeType: string) {
     // ── 1. Load face-api models if not already loaded ──
-    const modelsPath = path.join(__dirname, '../../models');
+    const modelsPath = path.join(__dirname, '../models');
     if (!faceapi.nets.ssdMobilenetv1.isLoaded) {
       await faceapi.nets.ssdMobilenetv1.loadFromDisk(modelsPath);
     }
