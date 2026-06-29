@@ -251,21 +251,24 @@ export class ProfilesService {
   }
 
   // ── 3. Upload to Cloudflare Images ──
-  const formData = new FormData();
-  const blob = new Blob([new Uint8Array(fileBuffer)], { type: mimeType });
-  formData.append('file', blob, `avatar-${userId}.jpg`);
-  formData.append('id', `avatars/user-${userId}`);
+const formData = new FormData();
+formData.append('file', fileBuffer, {
+  filename: `avatar-${userId}.jpg`,
+  contentType: mimeType,
+});
+formData.append('id', `avatars/user-${userId}`);
 
-  const cfResponse = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/images/v1`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-      },
-      body: formData,
-    }
-  );
+const cfResponse = await fetch(
+  `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/images/v1`,
+  {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+      ...formData.getHeaders(),
+    },
+    body: formData,
+  }
+);
 
   const cfData = await cfResponse.json() as {
     success: boolean;
