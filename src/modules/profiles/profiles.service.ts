@@ -7,9 +7,9 @@ import {
   UpdatePinInput,
   VerifyPinInput,
 } from './profiles.schemas';
-import '@tensorflow/tfjs-node';
-import * as canvas from 'canvas';
+
 import * as faceapi from 'face-api.js';
+import * as canvas from 'canvas';
 import path from 'path';
 import FormData from 'form-data';
 
