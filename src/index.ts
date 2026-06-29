@@ -2,10 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import '@tensorflow/tfjs-node';
+import * as canvas from 'canvas';
+import * as faceapi from 'face-api.js';
 import { env } from './config/env';
 import { errorHandler } from './middleware/error.middleware';
 
-// Route imports (we'll fill these in per module)
 import authRoutes from './modules/auth/auth.routes';
 import profileRoutes from './modules/profiles/profiles.routes';
 import gymRoutes from './modules/gyms/gyms.routes';
@@ -15,7 +18,6 @@ import workoutRoutes from './modules/workouts/workouts.routes';
 const app = express();
 app.set('trust proxy', 1);
 
-// Security middleware
 app.use(helmet());
 app.use(cors({
   origin: env.isDev ? '*' : ['https://your-admin-panel.com'],
@@ -23,39 +25,47 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Rate limiting
 app.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: { success: false, error: 'Too many requests, slow down.' },
 }));
 
-// Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({ success: true, message: 'GymKlout API is running' });
 });
 
-// Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/profiles', profileRoutes);
 app.use('/api/v1/gyms', gymRoutes);
 app.use('/api/v1/memberships', membershipRoutes);
 app.use('/api/v1/workouts', workoutRoutes);
 
-// 404
 app.use((req, res) => {
   res.status(404).json({ success: false, error: 'Route not found' });
 });
 
-// Global error handler (must be last)
 app.use(errorHandler);
 
-app.listen(env.port, () => {
-  console.log(`GymKlout API running on port ${env.port} [${env.nodeEnv}]`);
-});
+// ─── Load face-api models then start server ───────────────────────────────────
+const { Canvas, Image, ImageData } = canvas;
+faceapi.env.monkeyPatch({ Canvas, Image, ImageData } as any);
+
+const modelsPath = path.join(__dirname, 'models');
+
+faceapi.nets.ssdMobilenetv1.loadFromDisk(modelsPath)
+  .then(() => {
+    console.log('Face detection model loaded');
+    app.listen(env.port, () => {
+      console.log(`GymKlout API running on port ${env.port} [${env.nodeEnv}]`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to load face detection model:', err);
+    process.exit(1);
+  });
 
 export default app;

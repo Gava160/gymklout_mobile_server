@@ -234,69 +234,63 @@ export class ProfilesService {
 
   // ─── Upload Avatar ───────────────────────────────────────────────────────────
   async uploadAvatar(userId: string, fileBuffer: Buffer, mimeType: string) {
-    // ── 1. Load face-api models if not already loaded ──
-    const modelsPath = path.join(__dirname, '../../models');
-    if (!faceapi.nets.ssdMobilenetv1.isLoaded) {
-      await faceapi.nets.ssdMobilenetv1.loadFromDisk(modelsPath);
-    }
+  // ── 1. Decode image buffer into canvas ──
+  const image = await canvas.loadImage(fileBuffer);
+  const cvs = canvas.createCanvas(image.width, image.height);
+  const ctx = cvs.getContext('2d');
+  ctx.drawImage(image, 0, 0);
 
-    // ── 2. Decode image buffer into a canvas for face-api ──
-    const image = await canvas.loadImage(fileBuffer);
-    const cvs = canvas.createCanvas(image.width, image.height);
-    const ctx = cvs.getContext('2d');
-    ctx.drawImage(image, 0, 0);
+  // ── 2. Run face detection ──
+  const detections = await faceapi.detectAllFaces(
+    cvs as unknown as HTMLCanvasElement,
+    new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
+  );
 
-    // ── 3. Run face detection ──
-    const detections = await faceapi.detectAllFaces(
-      cvs as unknown as HTMLCanvasElement,
-      new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
-    );
-
-    if (detections.length === 0) {
-      throw new AppError(400, 'No face detected. Please use a clear photo of your face.');
-    }
-
-    // ── 4. Upload to Cloudflare Images ──
-    const formData = new FormData();
-    const blob = new Blob([new Uint8Array(fileBuffer)], { type: mimeType });
-    formData.append('file', blob, `avatar-${userId}.jpg`);
-    formData.append('id', `avatars/user-${userId}`);
-
-    const cfResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/images/v1`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-        },
-        body: formData,
-      }
-    );
-
-    const cfData = await cfResponse.json() as {
-      success: boolean;
-      result: { variants: string[] };
-      errors: { message: string }[];
-    };
-
-    if (!cfData.success) {
-      throw new AppError(500, `Cloudflare upload failed: ${cfData.errors?.[0]?.message ?? 'Unknown error'}`);
-    }
-
-    const avatarUrl = cfData.result.variants[0];
-
-    // ── 5. Save URL to Supabase profile ──
-    const { error } = await supabase
-      .from('profiles')
-      .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
-      .eq('id', userId);
-
-    if (error) {
-      throw new AppError(500, 'Failed to save avatar URL to profile');
-    }
-
-    return { avatarUrl };
+  if (detections.length === 0) {
+    throw new AppError(400, 'No face detected. Please use a clear photo of your face.');
   }
+
+  // ── 3. Upload to Cloudflare Images ──
+  const formData = new FormData();
+  const blob = new Blob([new Uint8Array(fileBuffer)], { type: mimeType });
+  formData.append('file', blob, `avatar-${userId}.jpg`);
+  formData.append('id', `avatars/user-${userId}`);
+
+  const cfResponse = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/images/v1`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+      },
+      body: formData,
+    }
+  );
+
+  const cfData = await cfResponse.json() as {
+    success: boolean;
+    result: { variants: string[] };
+    errors: { message: string }[];
+  };
+
+  if (!cfData.success) {
+    throw new AppError(500, `Cloudflare upload failed: ${cfData.errors?.[0]?.message ?? 'Unknown error'}`);
+  }
+
+  const avatarUrl = cfData.result.variants[0];
+
+  // ── 4. Save URL to Supabase ──
+  const { error } = await supabase
+    .from('profiles')
+    .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+
+  if (error) {
+    throw new AppError(500, 'Failed to save avatar URL to profile');
+  }
+
+  return { avatarUrl };
+}
 
 }
 
