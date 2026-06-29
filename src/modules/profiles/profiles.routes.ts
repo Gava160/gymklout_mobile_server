@@ -45,7 +45,6 @@ const deleteLimiter = rateLimit({
 router.use(authenticate);
 
 router.get('/me', profilesController.getMyProfile);
-router.get('/:userId', profilesController.getProfileById);
 
 router.post(
   '/complete',
@@ -81,5 +80,8 @@ router.delete(
   validate(verifyPinSchema),
   profilesController.deleteAccount
 );
+
+router.get('/:userId', profilesController.getProfileById);
+
 
 export default router;
