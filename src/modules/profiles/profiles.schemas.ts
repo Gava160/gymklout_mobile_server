@@ -9,7 +9,7 @@ export const completeProfileSchema = z.object({
   pin: z
     .string()
     .length(4, 'PIN must be exactly 4 digits')
-    .regex(/^\d{4}$/, 'PIN must contain only numbers'),
+    .regex(/^\d{4}$/, 'PIN must contain only numbers').optional(),
   gender: z.enum(['male', 'female', 'other']).optional(),
   dateOfBirth: z
     .string()
@@ -26,6 +26,7 @@ export const completeProfileSchema = z.object({
   city: z.string().max(100, 'City name too long').optional(),
   state: z.string().max(100, 'State name too long').optional(),
   country: z.string().max(100, 'Country name too long').optional(),
+  completedProfileRegistration: z.boolean().optional(),
   weightKg: z
     .number()
     .min(20, 'Weight seems too low')
@@ -52,7 +53,6 @@ age: z.number().min(13).max(120).optional(),
   fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   targetWeightKg: z.number().min(20).max(500).optional(),
   workoutFrequency: z.number().min(1).max(7).optional(),
-  completedProfileRegistration: z.boolean().optional(),
 });
 
 export const updateProfileSchema = z.object({
