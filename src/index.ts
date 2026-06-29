@@ -3,9 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
-import '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-node';
+import * as faceapi from '@vladmandic/face-api';
+
 import * as canvas from 'canvas';
-import * as faceapi from 'face-api.js';
 import { env } from './config/env';
 import { errorHandler } from './middleware/error.middleware';
 
@@ -63,7 +64,7 @@ faceapi.nets.ssdMobilenetv1.loadFromDisk(modelsPath)
       console.log(`GymKlout API running on port ${env.port} [${env.nodeEnv}]`);
     });
   })
-  .catch((err) => {
+  .catch((err: any) => {
     console.error('Failed to load face detection model:', err);
     process.exit(1);
   });

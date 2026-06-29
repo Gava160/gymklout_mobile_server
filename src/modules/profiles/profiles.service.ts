@@ -8,7 +8,7 @@ import {
   VerifyPinInput,
 } from './profiles.schemas';
 
-import * as faceapi from 'face-api.js';
+import * as faceapi from '@vladmandic/face-api';
 import * as canvas from 'canvas';
 import path from 'path';
 import FormData from 'form-data';
