@@ -25,7 +25,7 @@ export const authenticate = async (
       return;
     }
     console.log('AUTH HEADER:', req.headers.authorization?.substring(0, 30));
-console.log('PATH:', req.path);
+    console.log('PATH:', req.path);
 
     req.user = {
       id: user.id,
