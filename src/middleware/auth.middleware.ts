@@ -16,22 +16,14 @@ export const authenticate = async (
     }
 
     const token = authHeader.split(' ')[1];
-    
-    
+
     // Verify the Supabase JWT
     const { data: { user }, error } = await supabase.auth.getUser(token);
-      console.log('TOKEN RECEIVED (first 30):', token?.substring(0, 30)); // 👈
-    console.log('SUPABASE ERROR:', error); // 👈
-    console.log('USER:', user?.id); // 👈
 
     if (error || !user) {
       res.status(401).json({ success: false, error: 'Invalid or expired token' });
       return;
     }
-    console.log('AUTH HEADER:', req.headers.authorization?.substring(0, 30));
-    console.log('PATH:', req.path);
-
-    
 
     req.user = {
       id: user.id,

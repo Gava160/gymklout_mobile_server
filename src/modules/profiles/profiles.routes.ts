@@ -49,8 +49,7 @@ router.get('/me', profilesController.getMyProfile);
 router.post(
   '/complete',
   (req, res, next) => {
-    console.log('HIT /complete route');
-    console.log('HEADERS:', req.headers.authorization?.substring(0, 20));
+   console.log('BODY:', JSON.stringify(req.body));
     next();
   },
   updateLimiter,
