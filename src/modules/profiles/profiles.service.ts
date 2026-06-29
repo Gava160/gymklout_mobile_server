@@ -7,15 +7,23 @@ import {
   UpdatePinInput,
   VerifyPinInput,
 } from './profiles.schemas';
-
 import * as faceapi from '@vladmandic/face-api';
 import * as canvas from 'canvas';
-import path from 'path';
-import FormData from 'form-data';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-// Patch face-api.js to use node-canvas instead of browser DOM
+// Patch face-api to use node-canvas
 const { Canvas, Image, ImageData } = canvas;
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData } as any);
+
+// ─── R2 S3 Client ─────────────────────────────────────────────────────────────
+const r2Client = new S3Client({
+  region: 'auto',
+  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+  },
+});
 
 
 export class ProfilesService {
@@ -250,41 +258,21 @@ export class ProfilesService {
     throw new AppError(400, 'No face detected. Please use a clear photo of your face.');
   }
 
-  // ── 3. Upload to Cloudflare Images ──
-const formData = new FormData();
-formData.append('file', fileBuffer, {
-  filename: `avatar-${userId}.jpg`,
-  contentType: mimeType,
-});
-formData.append('id', `avatars/user-${userId}`);
+  // ── 3. Upload to R2 ──
+  const key = `avatars/user-${userId}.jpg`;
 
-const cfResponse = await fetch(
-  `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/images/v1`,
-  {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-      ...formData.getHeaders(),
-    },
-    body: formData,
-  }
-);
+  await r2Client.send(new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME!,
+    Key: key,
+    Body: fileBuffer,
+    ContentType: mimeType,
+    CacheControl: 'public, max-age=31536000',
+  }));
 
-  const cfData = await cfResponse.json() as {
-    success: boolean;
-    result: { variants: string[] };
-    errors: { message: string }[];
-  };
+  // ── 4. Build public URL via custom domain ──
+  const avatarUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
 
-  console.log('Cloudflare response:', JSON.stringify(cfData));
-
-  if (!cfData.success) {
-    throw new AppError(500, `Cloudflare upload failed: ${cfData.errors?.[0]?.message ?? 'Unknown error'}`);
-  }
-
-  const avatarUrl = cfData.result.variants[0];
-
-  // ── 4. Save URL to Supabase ──
+  // ── 5. Save URL to Supabase ──
   const { error } = await supabase
     .from('profiles')
     .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
@@ -296,6 +284,7 @@ const cfResponse = await fetch(
 
   return { avatarUrl };
 }
+
 
 }
 
