@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
 import { profilesController } from './profiles.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { validate } from '../../middleware/validate.middleware';
@@ -12,9 +13,14 @@ import {
 
 const router = Router();
 
+// ─── Multer — memory storage (no disk write) ──────────────────────────────────
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB hard limit at multer level
+});
+
 // ─── Rate Limiters ────────────────────────────────────────────────────────────
 
-// PIN operations — very strict
 const pinLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -23,7 +29,6 @@ const pinLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Profile updates — moderate
 const updateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -32,11 +37,19 @@ const updateLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Delete account — very strict
 const deleteLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 3,
   message: { success: false, error: 'Too many delete attempts.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Avatar upload — strict
+const avatarLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: { success: false, error: 'Too many avatar upload attempts. Try again in an hour.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -49,7 +62,7 @@ router.get('/me', profilesController.getMyProfile);
 router.post(
   '/complete',
   (req, res, next) => {
-   console.log('BODY:', JSON.stringify(req.body));
+    console.log('BODY:', JSON.stringify(req.body));
     next();
   },
   updateLimiter,
@@ -85,7 +98,14 @@ router.delete(
   profilesController.deleteAccount
 );
 
-router.get('/:userId', profilesController.getProfileById);
+// ─── Avatar upload ────────────────────────────────────────────────────────────
+router.post(
+  '/avatar',
+  avatarLimiter,
+  upload.single('avatar'),
+  profilesController.uploadAvatar
+);
 
+router.get('/:userId', profilesController.getProfileById);
 
 export default router;

@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import multer from 'multer';
 
 // Authenticated request — available after auth middleware
 export interface AuthRequest extends Request {
@@ -7,6 +8,7 @@ export interface AuthRequest extends Request {
     email: string;
     role?: string;
   };
+  file?: Express.Multer.File;
 }
 
 // Standard API response shape

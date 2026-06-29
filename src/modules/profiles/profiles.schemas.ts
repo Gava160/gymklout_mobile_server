@@ -112,6 +112,17 @@ export const verifyPinSchema = z.object({
     .regex(/^\d{4}$/, 'PIN must contain only numbers'),
 });
 
+
+export const uploadAvatarSchema = z.object({
+  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp'], {
+    error: 'Only JPEG, PNG, and WebP images are allowed',
+  }),
+  sizeBytes: z
+    .number()
+    .max(5 * 1024 * 1024, 'Image must be under 5MB'),
+});
+
+export type UploadAvatarInput = z.infer<typeof uploadAvatarSchema>;
 export type CompleteProfileInput = z.infer<typeof completeProfileSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type UpdatePinInput = z.infer<typeof updatePinSchema>;

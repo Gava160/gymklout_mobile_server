@@ -66,6 +66,35 @@ export class ProfilesController {
       next(err);
     }
   }
+
+  async uploadAvatar(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) {
+      res.status(400).json({ success: false, message: 'No image file provided' });
+      return;
+    }
+
+    const { mimetype, buffer, size } = req.file;
+
+    // Validate mime type and size before hitting face detection
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(mimetype)) {
+      res.status(400).json({ success: false, message: 'Only JPEG, PNG, and WebP images are allowed' });
+      return;
+    }
+
+    if (size > 5 * 1024 * 1024) {
+      res.status(400).json({ success: false, message: 'Image must be under 5MB' });
+      return;
+    }
+
+    const data = await profilesService.uploadAvatar(req.user!.id, buffer, mimetype);
+    res.status(200).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
 }
 
 export const profilesController = new ProfilesController();
