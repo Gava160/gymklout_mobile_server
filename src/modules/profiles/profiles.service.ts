@@ -7,10 +7,15 @@ import {
   UpdatePinInput,
   VerifyPinInput,
 } from './profiles.schemas';
-import * as faceapi from 'face-api.js';
+import '@tensorflow/tfjs-node';
 import * as canvas from 'canvas';
+import * as faceapi from 'face-api.js';
 import path from 'path';
 import FormData from 'form-data';
+
+// Patch face-api.js to use node-canvas instead of browser DOM
+const { Canvas, Image, ImageData } = canvas;
+faceapi.env.monkeyPatch({ Canvas, Image, ImageData } as any);
 
 
 export class ProfilesService {
