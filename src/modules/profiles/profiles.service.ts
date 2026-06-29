@@ -276,6 +276,8 @@ const cfResponse = await fetch(
     errors: { message: string }[];
   };
 
+  console.log('Cloudflare response:', JSON.stringify(cfData));
+
   if (!cfData.success) {
     throw new AppError(500, `Cloudflare upload failed: ${cfData.errors?.[0]?.message ?? 'Unknown error'}`);
   }
