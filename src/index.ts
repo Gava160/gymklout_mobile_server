@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
-import '@tensorflow/tfjs-node';
+import '@tensorflow/tfjs';
 import * as canvas from 'canvas';
 import * as faceapi from 'face-api.js';
 import { env } from './config/env';
