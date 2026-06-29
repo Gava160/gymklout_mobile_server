@@ -50,7 +50,7 @@ age: z.number().min(13).max(120).optional(),
   bio: z.string().max(300, 'Bio must be under 300 characters').optional(),
 
   activityLevel: z.enum(['sedentary', 'lightly_active', 'moderately_active', 'very_active']).optional(),
-  fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  fitnessLevel: z.enum(['rookie', 'beginner', 'intermediate', 'advance', 'true_beast']).optional(),
   targetWeightKg: z.number().min(20).max(500).optional(),
   workoutFrequency: z.number().min(1).max(7).optional(),
 });
@@ -84,7 +84,7 @@ export const updateProfileSchema = z.object({
     age: z.number().min(13).max(120).optional(),
   bio: z.string().max(300).optional(),
   activityLevel: z.enum(['sedentary', 'lightly_active', 'moderately_active', 'very_active']).optional(),
-  fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  fitnessLevel: z.enum(['rookie', 'beginner', 'intermediate', 'advance', 'true_beast']).optional(),
   targetWeightKg: z.number().min(20).max(500).optional(),
   workoutFrequency: z.number().min(1).max(7).optional(),
 });
