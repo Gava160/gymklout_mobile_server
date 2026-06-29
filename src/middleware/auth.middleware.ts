@@ -24,6 +24,8 @@ export const authenticate = async (
       res.status(401).json({ success: false, error: 'Invalid or expired token' });
       return;
     }
+    console.log('AUTH HEADER:', req.headers.authorization?.substring(0, 30));
+console.log('PATH:', req.path);
 
     req.user = {
       id: user.id,
