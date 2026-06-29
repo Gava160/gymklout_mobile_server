@@ -70,6 +70,7 @@ export class ProfilesService {
       .eq('id', userId)
       .select('*')
       .single();
+      console.log('SUPABASE UPDATE ERROR:', error);
 
     if (error) {
       throw new AppError(500, 'Failed to update profile');
