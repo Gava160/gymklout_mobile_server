@@ -4,21 +4,22 @@ import { gymsService } from './gyms.service';
 
 export class GymsController {
   async getNearbyGyms(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const input = {
-        latitude: parseFloat(req.query.latitude as string),
-        longitude: parseFloat(req.query.longitude as string),
-        radiusKm: req.query.radiusKm ? parseFloat(req.query.radiusKm as string) : 10,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
-        offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
-      };
+  try {
+    const input = {
+      latitude: parseFloat(req.query.latitude as string),
+      longitude: parseFloat(req.query.longitude as string),
+      radiusKm: req.query.radiusKm ? parseFloat(req.query.radiusKm as string) : 10,
+      state: req.query.state as string | undefined,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
+      offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
+    };
 
-      const data = await gymsService.getNearbyGyms(input);
-      res.status(200).json({ success: true, data });
-    } catch (err) {
-      next(err);
-    }
+    const data = await gymsService.getNearbyGyms(input);
+    res.status(200).json({ success: true, data });
+  } catch (err) {
+    next(err);
   }
+}
 
   async getGymsByCity(req: AuthRequest, res: Response, next: NextFunction) {
     try {

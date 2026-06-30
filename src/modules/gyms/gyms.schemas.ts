@@ -14,6 +14,12 @@ export const nearbyGymsSchema = z.object({
     .min(1, 'Radius must be at least 1km')
     .max(100, 'Radius cannot exceed 100km')
     .default(10),
+  state: z
+    .string()
+    .trim()
+    .min(1, 'State is required')
+    .max(100, 'State name too long')
+    .optional(),
   limit: z
     .number()
     .min(1)

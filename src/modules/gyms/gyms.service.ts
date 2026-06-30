@@ -9,31 +9,29 @@ import {
 export class GymsService {
   // ─── Get Nearby Gyms (sorted by distance) ────────────────────────────────────
   // This is the main discovery query — uses PostGIS ST_DWithin + ST_Distance
-  async getNearbyGyms(input: NearbyGymsInput) {
-    const { latitude, longitude, radiusKm, limit, offset } = input;
-    const radiusMeters = radiusKm * 1000;
+ async getNearbyGyms(input: NearbyGymsInput) {
+  const { latitude, longitude, radiusKm, state, limit, offset } = input;
+  const radiusMeters = radiusKm * 1000;
 
-    // Raw SQL for PostGIS geo query — Supabase client doesn't support
-    // ST_DWithin natively so we use rpc (stored function)
-    const { data, error } = await supabase.rpc('get_nearby_gyms', {
-      user_lat: latitude,
-      user_lng: longitude,
-      radius_meters: radiusMeters,
-      result_limit: limit,
-      result_offset: offset,
-    });
+  const { data, error } = await supabase.rpc('get_nearby_gyms', {
+    user_lat: latitude,
+    user_lng: longitude,
+    radius_meters: radiusMeters,
+    result_limit: limit,
+    result_offset: offset,
+    p_state: state ?? null,
+  });
 
-    if (error) {
-      throw new AppError(500, 'Failed to fetch nearby gyms');
-    }
-
-    return {
-      gyms: data ?? [],
-      total: data?.length ?? 0,
-      // Flag the first result as closest — list is already sorted by distance
-      closestGymId: data?.[0]?.id ?? null,
-    };
+  if (error) {
+    throw new AppError(500, 'Failed to fetch nearby gyms');
   }
+
+  return {
+    gyms: data ?? [],
+    total: data?.length ?? 0,
+    closestGymId: data?.[0]?.id ?? null,
+  };
+}
 
   // ─── Get Gyms by City ─────────────────────────────────────────────────────────
   // Used when we know user's city from their profile
