@@ -270,7 +270,7 @@ export class ProfilesService {
   }));
 
   // ── 4. Build public URL via custom domain ──
-  const avatarUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+  const avatarUrl = `${process.env.R2_PUBLIC_URL}/${key}?v=${Date.now()}`;
 
   // ── 5. Save URL to Supabase ──
   const { error } = await supabase
