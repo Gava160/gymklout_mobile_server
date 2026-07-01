@@ -120,7 +120,8 @@ export class MembershipsService {
         gyms (
           id, name, description, logo_url, cover_url,
           address, city, state, country,
-          latitude, longitude, is_verified
+          latitude, longitude, is_verified,
+          created_at, updated_at     
         )
       `)
       .eq('user_id', userId)
