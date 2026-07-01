@@ -15,6 +15,7 @@ import profileRoutes from './modules/profiles/profiles.routes';
 import gymRoutes from './modules/gyms/gyms.routes';
 import membershipRoutes from './modules/memberships/memberships.routes';
 import workoutRoutes from './modules/workouts/workouts.routes';
+import visitRoutes from './modules/visits/visits.routes';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -44,6 +45,7 @@ app.use('/api/v1/profiles', profileRoutes);
 app.use('/api/v1/gyms', gymRoutes);
 app.use('/api/v1/memberships', membershipRoutes);
 app.use('/api/v1/workouts', workoutRoutes);
+app.use('/api/v1/visits', visitRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, error: 'Route not found' });
